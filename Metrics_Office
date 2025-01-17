@@ -1,0 +1,50 @@
+getwd()
+install.packages("readxl")
+install.packages("dplyr")
+install.packages("tidyr")
+install.packages("ggplot2")
+library(readxl)
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+
+Metrics <- read_excel("I-eTMF Quality Rejection Report_for January to May_2024_LL.xlsx", sheet = "Dec_M")
+
+Metrics_Dec_Type <- dplyr::select(Metrics, "DOCUMENT_TYPE", `Doc Type Change Flag`, `Subtype Change Flag`, `Doc Date Change Flag`, `Language Change Flag`)
+Metrics_Dec_T <- Metrics_Dec_Type %>%
+ pivot_longer(cols = c(`Doc Type Change Flag`,`Subtype Change Flag`, `Doc Date Change Flag`, `Language Change Flag`), 
+                                              names_to = "Change_Flag", 
+                                              values_to = "Value")
+Metrics_LongT <- Metrics_Dec_T %>%
+  filter(Value == "Y") %>%
+  group_by(DOCUMENT_TYPE, Change_Flag) %>%
+  summarise(Count = n(), .groups = 'drop')
+head(Metrics_LongT)
+
+Metrics_LongT2 <- Metrics_LongT[order(-Metrics_LongT$Count), ]
+# Display the sorted data
+head(Metrics_LongT2)
+
+Metrics_Dec_Own <- dplyr::select(Metrics, `Doc Owner`, `Doc Type Change Flag`, `Subtype Change Flag`, `Doc Date Change Flag`, `Language Change Flag`)
+Metrics_Dec_O <- Metrics_Dec_Own %>%
+  pivot_longer(cols = c(`Doc Type Change Flag`,`Subtype Change Flag`, `Doc Date Change Flag`, `Language Change Flag`), 
+                                              names_to = "Change_Flag", 
+                                              values_to = "Value")
+# Filter for "Y" values and count them
+Metrics_LongO <- Metrics_Dec_O %>%
+  filter(Value == "Y") %>%
+  group_by(`Doc Owner`, Change_Flag) %>%
+  summarise(Count = n(), .groups = 'drop')
+head(Metrics_LongO)
+
+Metrics_LongO2 <- Metrics_LongO[order(-Metrics_LongO$Count), ]
+# Display the sorted data
+head(Metrics_LongO2)
+
+options(device = webr::canvas)
+plot <- ggplot(Metrics_LongO2, aes(x = `Doc Owner`, y = Count, fill = Change_Flag)) +
+  geom_bar(stat = "identity") +
+  geom_text(aes(label = Count), position = position_stack(vjust = 0.5)) +
+  labs(title = "Number of Modifications by Doc Owner", x = "Doc Owner", y = "Count") +
+  theme_minimal()
+ggsave("plot.png", plot = plot, width = 15, height = 20)
