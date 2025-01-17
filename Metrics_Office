@@ -25,6 +25,15 @@ Metrics_LongT2 <- Metrics_LongT[order(-Metrics_LongT$Count), ]
 # Display the sorted data
 head(Metrics_LongT2)
 
+options(device = webr::canvas)
+plot2 <- ggplot(Metrics_LongT2, aes(x = DOCUMENT_TYPE, y = Count, fill = Change_Flag)) +
+  geom_bar(stat = "identity") +
+  geom_text(aes(label = Count), position = position_stack(vjust = 0.5)) +
+  labs(title = "Number of Modifications by Document Type", x = "DOCUMENT_TYPE", y = "Count") +
+  theme_minimal()
+ggsave("plot.png", plot = plot, width = 15, height = 20)
+
+
 Metrics_Dec_Own <- dplyr::select(Metrics, `Doc Owner`, `Doc Type Change Flag`, `Subtype Change Flag`, `Doc Date Change Flag`, `Language Change Flag`)
 Metrics_Dec_O <- Metrics_Dec_Own %>%
   pivot_longer(cols = c(`Doc Type Change Flag`,`Subtype Change Flag`, `Doc Date Change Flag`, `Language Change Flag`), 
