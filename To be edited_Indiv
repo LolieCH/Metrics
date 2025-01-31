@@ -1,0 +1,54 @@
+library(readxl)
+library(dplyr)
+
+# Function to read and select columns from a sheet
+read_and_select <- function(sheet_name, columns) {
+  read_excel("your_file.xlsx", sheet = sheet_name) %>%
+    select(all_of(columns))
+}
+
+# List of sheet names and columns to select
+sheets <- c("Sheet1", "Sheet2", "Sheet3")
+columns <- c("column1", "column2")
+
+# Apply the function to each sheet
+selected_sheets <- lapply(sheets, read_and_select, columns = columns)
+
+
+getwd()
+install.packages("readxl")
+install.packages("dplyr")
+install.packages("tidyr")
+install.packages("ggplot2")
+library(readxl)
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+
+SMetrics <- excel_sheets("Stella_Mods and Rejects_Oct to Dec.xlsx")
+SMDF <- lapply(SMetrics, function(sheet) {
+  read_excel("Stella_Mods and Rejects_Oct to Dec.xlsx", sheet = sheet)
+})
+
+SM_changes <- function(SMDF) {
+  SMDF %>%
+    group_by("DOCUMENT_TYPE") %>%
+    summarise(
+      DocT = sum("`Doc Type Change Flag`" == "Y"),
+      DateT = sum("`Doc Date Change Flag`" == "Y"),
+      SubT = sum("`Subtype Change Flag`" == "Y"),
+      LangT = sum("`Language Change Flag`" == "Y")
+    )
+}
+
+FullSM <- lapply(SMDF, SM_changes)
+
+result <- SM_changes(list_SM[[1]])
+print(result)
+
+print(FullSM[["Oct_R"]])
+print(FullSM[["Oct_M"]])
+print(FullSM[["Nov_R"]])
+print(FullSM[["Nov_M"]])
+print(FullSM[["Dec_R"]])
+print(FullSM[["Dec_M"]])
