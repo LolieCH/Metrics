@@ -1,0 +1,170 @@
+```{R}
+#Get excel - make sure you are trying to read the excel file and not the directory
+file_path <- ()
+sheet_names <- excel_sheets(file_path)                                              #list all sheet names
+all_sheets <- lapply(sheet_names, read_excel, path = file_path)                     #read all sheets into a list of data frames
+summaries <- lapply(all_sheets, summary)                                            #summarise sheets
+print(summaries)
+```
+
+
+```{R}
+library(readxl)
+library(dplyr)
+
+# Function to read and combine all modification sheets with standardized column names
+read_modification_sheets <- function(file_path) {
+  sheet_names <- excel_sheets(file_path)[5:8]  # last 4 sheets
+  
+  all_modification_data <- list()  # changed from data.frame to list
+  
+  for (sheet in sheet_names) {
+    data <- read_excel(file_path, sheet = sheet)
+    data$Month <- sheet  # add month information
+    
+    # Standardize column names
+    if ("Pass Flag Mod" %in% colnames(data)) {
+      colnames(data)[which(colnames(data) == "Pass Flag Mod")] <- "Pass_Flag_Mod"
+    }
+    if ("SCREEN" %in% colnames(data)) {
+      colnames(data)[which(colnames(data) == "SCREEN")] <- "Workspace_Initial_Value"
+    }
+    
+    # Print the column names to diagnose the issue
+    print(paste("Column names in sheet:", sheet))
+    print(colnames(data))
+    
+    # Check if 'Pass_Flag_Mod' column is present
+    if (!("Pass_Flag_Mod" %in% colnames(data))) {
+      stop(paste("Column 'Pass_Flag_Mod' not found in sheet:", sheet))
+    }
+    
+    # Filter to only include rows where Pass_Flag_Mod is 'Fail' (case-sensitive)
+    data <- data %>% filter(Pass_Flag_Mod == "Fail")
+    
+    # Additional filters
+    data <- data %>%
+      filter(SCREEN == "Workspace: Initial Value") %>%
+      filter(DocOwner == "CRA")
+    
+    # Print data after filtering
+    print(paste("Data after filtering - Sheet:", sheet))
+    print(head(data))
+    
+    all_modification_data <- append(all_modification_data, list(data))
+  }
+  
+  all_modification_data <- bind_rows(all_modification_data)
+  return(all_modification_data)
+}
+
+# Read all data
+modification_data <- read_modification_sheets(file_path)
+
+# Print the filtered modification data
+print(head(modification_data))
+
+# Verify that all values in the "Pass_Flag_Mod" column are "Fail"
+if (all(modification_data$Pass_Flag_Mod == "Fail")) {
+  print("All rows have 'Fail' in the Pass_Flag_Mod column.")
+} else {
+  print("There are some rows that do not have 'Fail' in the Pass_Flag_Mod column.")
+}
+
+```
+
+```{R}
+# Analysis: most common protocols in modification data
+protocol_modification_counts <- modification_data %>%
+  count(PROTOCOL) %>%
+  arrange(desc(n)) %>%
+  top_n(10)
+```
+
+```{R}
+# Print the result
+print(protocol_modification_counts)
+```
+
+```{R}
+write_xlsx(protocol_modification_counts, path = "Filtered_Modification_Data.xlsx")
+```
+
+```{R}
+# Function to read and combine all rejection sheets with standardized column names
+read_rejection_sheets <- function(file_path) {
+  sheet_names <- excel_sheets(file_path)[1:4]  # first 4 sheets
+  
+  all_rejection_data <- list()  # changed from data.frame to list
+  
+  for (sheet in sheet_names) {
+    data <- read_excel(file_path, sheet = sheet)
+    data$Month <- sheet  # add month information
+    
+    # Standardize column names
+    if ("Pass Flag Reject" %in% colnames(data)) {
+      colnames(data)[which(colnames(data) == "Pass Flag Reject")] <- "Pass_Flag_Reject"
+    }
+    
+    # Print the column names to diagnose the issue
+    print(paste("Column names in sheet:", sheet))
+    print(colnames(data))
+    
+    # Check if 'Pass_Flag_Reject' column is present
+    if (!("Pass_Flag_Reject" %in% colnames(data))) {
+      stop(paste("Column 'Pass_Flag_Reject' not found in sheet:", sheet))
+    }
+    
+    # Filter to only include rows where Pass_Flag_Reject is 'Fail' (case-sensitive)
+    data <- data %>% filter(Pass_Flag_Reject == "Fail")
+    
+    # Additional filters
+    data <- data %>%
+      filter(SCREEN == "Workspace: Initial Value") %>%
+      filter(DocOwner == "CRA")
+    
+    # Print data after filtering
+    print(paste("Data after filtering - Sheet:", sheet))
+    print(head(data))
+    
+    all_rejection_data <- append(all_rejection_data, list(data))
+  }
+  
+  all_rejection_data <- bind_rows(all_rejection_data)
+  return(all_rejection_data)
+}
+
+# Provide your file path
+file_path <- "/Users/loliecase-hall/Documents/Code/Studyanddocumentmets.xlsx"
+
+# Read all data
+rejection_data <- read_rejection_sheets(file_path)
+
+# Print the filtered rejection data
+print(head(rejection_data))
+
+# Verify that all values in the "Pass_Flag_Reject" column are "Fail"
+if (all(rejection_data$Pass_Flag_Reject == "Fail")) {
+  print("All rows have 'Fail' in the Pass_Flag_Reject column.")
+} else {
+  print("There are some rows that do not have 'Fail' in the Pass_Flag_Reject column.")
+}
+```
+
+```{R}
+
+# Analysis: most common protocols in rejection data
+protocol_rejection_counts <- rejection_data %>%
+  count(PROTOCOL) %>%
+  arrange(desc(n)) %>%
+  top_n(10)
+```
+
+```{R}
+# Print the result
+print(protocol_rejection_counts)
+```
+
+```{R}
+write_xlsx(protocol_rejection_counts, path = "Filtered_rejection_Data.xlsx")
+```
